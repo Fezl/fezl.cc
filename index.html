@@ -15,7 +15,7 @@
             color: #fff;
             font-family: 'Inter', 'PingFang SC', system-ui, sans-serif;
             overflow: hidden;
-            touch-action: manipulation; /* 优化移动端点击延迟 */
+            touch-action: manipulation;
         }
 
         .blob {
@@ -30,6 +30,7 @@
             z-index: -1;
             opacity: 0.4;
             animation: move 20s infinite alternate ease-in-out;
+            pointer-events: none;
         }
 
         @keyframes move {
@@ -43,23 +44,33 @@
         }
 
         .logo-wrap {
-            font-size: clamp(4rem, 20vw, 8rem); /* 响应式字号 */
+            font-size: clamp(4rem, 20vw, 8rem);
             font-weight: 900;
             letter-spacing: -0.05em;
             cursor: pointer;
             user-select: none;
-            -webkit-tap-highlight-color: transparent; /* 移除移动端点击阴影 */
+            -webkit-tap-highlight-color: transparent;
         }
 
         .letter {
             display: inline-block;
-            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             color: rgba(255, 255, 255, 0.8);
             padding: 0 5px;
         }
 
-        /* 电脑端悬停 & 移动端激活状态 */
-        .letter:hover, .letter.active {
+        /* 仅在支持鼠标的设备上启用 hover 动画 */
+        @media (hover: hover) {
+            .letter:hover {
+                transform: scale(1.15) translateY(-10px);
+                color: #fff;
+                text-shadow: 0 0 20px rgba(255, 255, 255, 0.8), 
+                             0 0 40px rgba(255, 255, 255, 0.4);
+            }
+        }
+
+        /* 移动端/电脑端通用的激活类 */
+        .letter.active {
             transform: scale(1.15) translateY(-10px);
             color: #fff;
             text-shadow: 0 0 20px rgba(255, 255, 255, 0.8), 
@@ -81,26 +92,31 @@
             position: fixed;
             bottom: 40px;
             display: flex;
-            gap: clamp(15px, 5vw, 30px);
-            font-size: 0.75rem;
-            letter-spacing: 0.1rem;
+            gap: clamp(15px, 5vw, 40px);
+            font-size: 0.65rem;
+            letter-spacing: 0.2rem;
+            text-transform: uppercase;
         }
 
-        .nav a {
+        .static-text {
             color: #fff;
-            text-decoration: none;
-            opacity: 0.4;
-            transition: 0.3s;
+            opacity: 0.25;
+            cursor: default;
+            transition: opacity 0.5s ease;
         }
 
-        @media (max-width: 480px) {
-            .blob { width: 100vw; height: 100vw; filter: blur(60px); }
+        .static-text:hover {
+            opacity: 0.6;
+        }
+
+        @media (max-width: 400px) {
+            .nav span:nth-child(2) { display: none; }
         }
     </style>
 </head>
 <body>
 
-    <div class="blob"></div>
+    <div class="blob" id="blob"></div>
 
     <div class="container">
         <div class="logo-wrap" id="logo-wrap">
@@ -109,7 +125,7 @@
             <span class="letter" data-text="ZEST / 热情">Z</span>
             <span class="letter" data-text="LOG / 记录">L</span>
         </div>
-       <div class="info-panel" id="info"></div>
+        <div class="info-panel" id="info"></div>
     </div>
 
     <nav class="nav">
@@ -117,39 +133,10 @@
         <span class="static-text">SINCE 2026</span>
     </nav>
 
-<style>
-    /* 调整底部文字样式 */
-    .nav {
-        position: fixed;
-        bottom: 40px;
-        display: flex;
-        gap: clamp(15px, 5vw, 40px);
-        font-size: 0.65rem; /* 稍微缩小一点，更精致 */
-        letter-spacing: 0.2rem;
-        text-transform: uppercase;
-    }
-
-    .static-text {
-        color: #fff;
-        opacity: 0.25; /* 降低透明度，不抢主体视觉 */
-        cursor: default;
-        transition: opacity 0.5s ease;
-    }
-
-    /* 悬停时淡淡亮起，增加质感 */
-    .static-text:hover {
-        opacity: 0.6;
-    }
-
-    /* 移动端适配：如果屏幕太窄则隐藏中间的文字 */
-    @media (max-width: 400px) {
-        .nav span:nth-child(2) { display: none; }
-    }
-</style>
-
     <script>
         const info = document.getElementById('info');
         const letters = document.querySelectorAll('.letter');
+        const blob = document.getElementById('blob');
         let timer = null;
 
         function updateDisplay(txt, isReset = false) {
@@ -157,35 +144,42 @@
             if (isReset) {
                 info.style.color = 'rgba(255,255,255,0.5)';
                 info.style.letterSpacing = '0.2rem';
+                info.style.opacity = '0'; // 复位时隐藏
             } else {
                 info.style.color = '#fff';
                 info.style.letterSpacing = '0.4rem';
+                info.style.opacity = '1';
             }
         }
 
         letters.forEach(letter => {
-            // 处理电脑端悬停
+            // 电脑端悬停
             letter.addEventListener('mouseenter', () => {
-                clearTimeout(timer);
-                updateDisplay(letter.getAttribute('data-text'));
+                if (window.matchMedia("(hover: hover)").matches) {
+                    clearTimeout(timer);
+                    updateDisplay(letter.getAttribute('data-text'));
+                }
             });
 
-            // 处理点击（适配移动端）
+            letter.addEventListener('mouseleave', () => {
+                if (window.matchMedia("(hover: hover)").matches) {
+                    reset();
+                }
+            });
+
+            // 移动端触控
             letter.addEventListener('touchstart', (e) => {
-                // e.preventDefault(); // 根据需要开启，防止某些浏览器的默认行为
-                clearTimeout(timer);
+                // 阻止默认行为以防止模拟 hover 粘滞
+                if (e.cancelable) e.preventDefault();
                 
-                // 移除其他字母的激活状态
+                clearTimeout(timer);
                 letters.forEach(l => l.classList.remove('active'));
-                // 激活当前字母
                 letter.classList.add('active');
                 updateDisplay(letter.getAttribute('data-text'));
-            });
+            }, { passive: false });
 
-            // 离开处理
-            letter.addEventListener('mouseleave', () => reset());
             letter.addEventListener('touchend', () => {
-                // 移动端手指离开后，延迟复位
+                // 延时恢复
                 timer = setTimeout(() => {
                     letter.classList.remove('active');
                     reset();
@@ -197,11 +191,11 @@
             updateDisplay('', true);
         }
 
-        // 简单的背景球随重力/鼠标轻微偏移（可选增强）
+        // 背景随鼠标移动偏移
         document.addEventListener('mousemove', (e) => {
             const x = (e.clientX / window.innerWidth - 0.5) * 20;
             const y = (e.clientY / window.innerHeight - 0.5) * 20;
-            document.querySelector('.blob').style.transform = `translate(${x}px, ${y}px)`;
+            blob.style.transform = `translate(${x}px, ${y}px)`;
         });
     </script>
 </body>
