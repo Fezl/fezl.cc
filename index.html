@@ -31,16 +31,23 @@
             opacity: 0.4;
             animation: move 20s infinite alternate ease-in-out;
             pointer-events: none;
+            /* 修正背景球位置，使其围绕黄金分割点旋转 */
+            top: 38.2%;
+            left: 50%;
         }
 
         @keyframes move {
-            from { transform: translate(-20%, -20%); }
-            to { transform: translate(20%, 20%); }
+            from { transform: translate(-70%, -70%); }
+            to { transform: translate(-30%, -30%); }
         }
 
         .container {
             text-align: center;
             width: 100%;
+            /* --- 黄金分割对齐修正 --- */
+            position: absolute;
+            top: 38.2%; 
+            transform: translateY(-50%); /* 抵消字体占位，实现视觉中心点对齐 */
         }
 
         .logo-wrap {
@@ -59,7 +66,6 @@
             padding: 0 5px;
         }
 
-        /* 仅在支持鼠标的设备上启用 hover 动画 */
         @media (hover: hover) {
             .letter:hover {
                 transform: scale(1.15) translateY(-10px);
@@ -69,7 +75,6 @@
             }
         }
 
-        /* 移动端/电脑端通用的激活类 */
         .letter.active {
             transform: scale(1.15) translateY(-10px);
             color: #fff;
@@ -144,7 +149,7 @@
             if (isReset) {
                 info.style.color = 'rgba(255,255,255,0.5)';
                 info.style.letterSpacing = '0.2rem';
-                info.style.opacity = '0'; // 复位时隐藏
+                info.style.opacity = '0'; 
             } else {
                 info.style.color = '#fff';
                 info.style.letterSpacing = '0.4rem';
@@ -153,7 +158,6 @@
         }
 
         letters.forEach(letter => {
-            // 电脑端悬停
             letter.addEventListener('mouseenter', () => {
                 if (window.matchMedia("(hover: hover)").matches) {
                     clearTimeout(timer);
@@ -167,11 +171,8 @@
                 }
             });
 
-            // 移动端触控
             letter.addEventListener('touchstart', (e) => {
-                // 阻止默认行为以防止模拟 hover 粘滞
                 if (e.cancelable) e.preventDefault();
-                
                 clearTimeout(timer);
                 letters.forEach(l => l.classList.remove('active'));
                 letter.classList.add('active');
@@ -179,7 +180,6 @@
             }, { passive: false });
 
             letter.addEventListener('touchend', () => {
-                // 延时恢复
                 timer = setTimeout(() => {
                     letter.classList.remove('active');
                     reset();
@@ -191,11 +191,11 @@
             updateDisplay('', true);
         }
 
-        // 背景随鼠标移动偏移
         document.addEventListener('mousemove', (e) => {
             const x = (e.clientX / window.innerWidth - 0.5) * 20;
             const y = (e.clientY / window.innerHeight - 0.5) * 20;
-            blob.style.transform = `translate(${x}px, ${y}px)`;
+            // 配合黄金分割位点做的背景球微调
+            blob.style.transform = `translate(calc(-50% + ${x}px), calc(-50% + ${y}px))`;
         });
     </script>
 </body>
