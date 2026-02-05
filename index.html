@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Fezl</title>
+    <style>
+        body {
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #000;
+            color: #fff;
+            font-family: 'Inter', 'PingFang SC', system-ui, sans-serif;
+            overflow: hidden;
+            touch-action: manipulation; /* 优化移动端点击延迟 */
+        }
+
+        .blob {
+            position: absolute;
+            width: 80vw;
+            height: 80vw;
+            max-width: 500px;
+            max-height: 500px;
+            background: linear-gradient(135deg, #6366f1 0%, #a855f7 50%, #ec4899 100%);
+            filter: blur(80px);
+            border-radius: 50%;
+            z-index: -1;
+            opacity: 0.4;
+            animation: move 20s infinite alternate ease-in-out;
+        }
+
+        @keyframes move {
+            from { transform: translate(-20%, -20%); }
+            to { transform: translate(20%, 20%); }
+        }
+
+        .container {
+            text-align: center;
+            width: 100%;
+        }
+
+        .logo-wrap {
+            font-size: clamp(4rem, 20vw, 8rem); /* 响应式字号 */
+            font-weight: 900;
+            letter-spacing: -0.05em;
+            cursor: pointer;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent; /* 移除移动端点击阴影 */
+        }
+
+        .letter {
+            display: inline-block;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            color: rgba(255, 255, 255, 0.8);
+            padding: 0 5px;
+        }
+
+        /* 电脑端悬停 & 移动端激活状态 */
+        .letter:hover, .letter.active {
+            transform: scale(1.15) translateY(-10px);
+            color: #fff;
+            text-shadow: 0 0 20px rgba(255, 255, 255, 0.8), 
+                         0 0 40px rgba(255, 255, 255, 0.4);
+        }
+
+        .info-panel {
+            margin-top: 3rem;
+            height: 1.5rem;
+            font-size: clamp(0.9rem, 4vw, 1.2rem);
+            font-weight: 300;
+            letter-spacing: 0.2rem;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.5);
+            transition: all 0.3s ease;
+        }
+
+        .nav {
+            position: fixed;
+            bottom: 40px;
+            display: flex;
+            gap: clamp(15px, 5vw, 30px);
+            font-size: 0.75rem;
+            letter-spacing: 0.1rem;
+        }
+
+        .nav a {
+            color: #fff;
+            text-decoration: none;
+            opacity: 0.4;
+            transition: 0.3s;
+        }
+
+        @media (max-width: 480px) {
+            .blob { width: 100vw; height: 100vw; filter: blur(60px); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="blob"></div>
+
+    <div class="container">
+        <div class="logo-wrap" id="logo-wrap">
+            <span class="letter" data-text="FOCUS / 专注">F</span>
+            <span class="letter" data-text="EXPLORE / 探索">E</span>
+            <span class="letter" data-text="ZEST / 热情">Z</span>
+            <span class="letter" data-text="LOG / 记录">L</span>
+        </div>
+    </div>
+
+    <nav class="nav">
+        <span class="static-text">©2026 fezl.cc</span>
+        <span class="static-text">SINCE 2026</span>
+    </nav>
+
+<style>
+    /* 调整底部文字样式 */
+    .nav {
+        position: fixed;
+        bottom: 40px;
+        display: flex;
+        gap: clamp(15px, 5vw, 40px);
+        font-size: 0.65rem; /* 稍微缩小一点，更精致 */
+        letter-spacing: 0.2rem;
+        text-transform: uppercase;
+    }
+
+    .static-text {
+        color: #fff;
+        opacity: 0.25; /* 降低透明度，不抢主体视觉 */
+        cursor: default;
+        transition: opacity 0.5s ease;
+    }
+
+    /* 悬停时淡淡亮起，增加质感 */
+    .static-text:hover {
+        opacity: 0.6;
+    }
+
+    /* 移动端适配：如果屏幕太窄则隐藏中间的文字 */
+    @media (max-width: 400px) {
+        .nav span:nth-child(2) { display: none; }
+    }
+</style>
+
+    <script>
+        const info = document.getElementById('info');
+        const letters = document.querySelectorAll('.letter');
+        let timer = null;
+
+        function updateDisplay(txt, isReset = false) {
+            info.innerText = txt;
+            if (isReset) {
+                info.style.color = 'rgba(255,255,255,0.5)';
+                info.style.letterSpacing = '0.2rem';
+            } else {
+                info.style.color = '#fff';
+                info.style.letterSpacing = '0.4rem';
+            }
+        }
+
+        letters.forEach(letter => {
+            // 处理电脑端悬停
+            letter.addEventListener('mouseenter', () => {
+                clearTimeout(timer);
+                updateDisplay(letter.getAttribute('data-text'));
+            });
+
+            // 处理点击（适配移动端）
+            letter.addEventListener('touchstart', (e) => {
+                // e.preventDefault(); // 根据需要开启，防止某些浏览器的默认行为
+                clearTimeout(timer);
+                
+                // 移除其他字母的激活状态
+                letters.forEach(l => l.classList.remove('active'));
+                // 激活当前字母
+                letter.classList.add('active');
+                updateDisplay(letter.getAttribute('data-text'));
+            });
+
+            // 离开处理
+            letter.addEventListener('mouseleave', () => reset());
+            letter.addEventListener('touchend', () => {
+                // 移动端手指离开后，延迟复位
+                timer = setTimeout(() => {
+                    letter.classList.remove('active');
+                    reset();
+                }, 650);
+            });
+        });
+
+        function reset() {
+            updateDisplay('FEZL.CC', true);
+        }
+
+        // 简单的背景球随重力/鼠标轻微偏移（可选增强）
+        document.addEventListener('mousemove', (e) => {
+            const x = (e.clientX / window.innerWidth - 0.5) * 20;
+            const y = (e.clientY / window.innerHeight - 0.5) * 20;
+            document.querySelector('.blob').style.transform = `translate(${x}px, ${y}px)`;
+        });
+    </script>
+</body>
+</html>
